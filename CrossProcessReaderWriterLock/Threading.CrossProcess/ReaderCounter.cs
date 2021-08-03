@@ -11,12 +11,13 @@ namespace Threading.CrossProcess
         /// <summary>
         /// Initializes a new instance of the <see cref="InterProcessReadCounter"/> class.
         /// </summary>
+        /// <param name="name">The synchronization object name. The name is case-sensitive.</param
         /// <param name="maxConcurrentRead">The maximum number of reader requests that can be granted concurrently.</param>
-        internal ReaderCounter(int maxConcurrentRead)
+        internal ReaderCounter(string name, int maxConcurrentRead)
         {
-            myMaximumCount = maxConcurrentRead + InitialCount;
-            myReadCounterSemaphore = new Semaphore(InitialCount, myMaximumCount, "Counter");
-            myIncomingOperation = new Semaphore(1, 1, "Incoming");
+            MaximumCount = maxConcurrentRead + InitialCount;
+            myReadCounterSemaphore = new Semaphore(InitialCount, MaximumCount, name);
+            myIncomingOperation = new Semaphore(1, 1, name + ".Incoming");
         }
 
         /// <summary>
@@ -31,7 +32,7 @@ namespace Threading.CrossProcess
             int counter = RetrieveCurrentCount();
 
             // Not allowing to exceed maximum count
-            if (counter != myMaximumCount - 1)
+            if (counter != MaximumCount - 1)
             {
                 counter = myReadCounterSemaphore.Release();
             }
@@ -76,7 +77,7 @@ namespace Threading.CrossProcess
         /// <summary>
         /// Maximum number of concurrent read count.
         /// </summary>
-        private readonly int myMaximumCount;
+        internal int MaximumCount { get; private set; }
 
         /// <summary>
         /// Initial count in order to safely exceed or deceed semaphore.
