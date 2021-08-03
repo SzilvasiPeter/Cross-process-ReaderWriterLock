@@ -9,15 +9,14 @@ namespace Threading.CrossProcess
     {
         public ReadWriterSynchronizer01(string name, int maxReaderCount)
         {
-            myInterprocessCounter = new ReaderCounter(name + ".Counter", maxReaderCount);
             myIncomingOperation = new Semaphore(1, 1, name + ".Incoming");
             myReadOperation = new Semaphore(1, 1, name + ".Reader");
             myWriteOperation = new Semaphore(1, 1, name + ".Writer");
+            myInterprocessCounter = new ReaderCounter(name + ".Counter", maxReaderCount);
         }
 
         public void EnterReadLock()
         {
-
             myIncomingOperation.WaitOne();
             myReadOperation.WaitOne();
 

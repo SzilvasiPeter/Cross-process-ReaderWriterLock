@@ -26,9 +26,6 @@ namespace Threading.CrossProcess
         /// <returns></returns>
         internal int Increase()
         {
-            // Make sure for atomic increase
-            myIncomingOperation.WaitOne();
-
             int counter = RetrieveCurrentCount();
 
             // Not allowing to exceed maximum count
@@ -41,8 +38,6 @@ namespace Threading.CrossProcess
                 counter++;
             }
 
-            myIncomingOperation.Release();
-
             return counter;
         }
 
@@ -52,13 +47,8 @@ namespace Threading.CrossProcess
         /// <returns></returns>
         internal int Decrease()
         {
-            // Make sure for atomic decrease
-            myIncomingOperation.WaitOne();
-
             int counter = RetrieveCurrentCount() - 1;
             myReadCounterSemaphore.WaitOne(0);
-
-            myIncomingOperation.Release();
 
             return counter;
         }
