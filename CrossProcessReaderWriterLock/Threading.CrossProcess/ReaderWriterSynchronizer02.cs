@@ -47,27 +47,18 @@ namespace Threading.CrossProcess
 
             // Local variable is necessary, because of compiler optimalization
             int currentCount = myInterProcessReadCounter.Increase();
-            if (currentCount == 1)
+            bool isReadLockEntered = (currentCount == 1 && myWriteOperation.WaitOne(myTimeout)) ||
+                currentCount != myInterProcessReadCounter.MaximumCount;
+
+            if (isReadLockEntered)
             {
-                if (!myWriteOperation.WaitOne(myTimeout))
-                {
-                    myIncomingOperation.Release();
-                    myReadOperation.Release();
-                    return false;
-                }
+                myIsReadLockCount++;
             }
 
             myReadOperation.Release();
             myIncomingOperation.Release();
 
-            if (currentCount == myInterProcessReadCounter.MaximumCount)
-            {
-                return false;
-            }
-
-            myIsReadLockEntered = true;
-
-            return myIsReadLockEntered.Value;
+            return isReadLockEntered;
         }
 
         /// <summary>
@@ -75,14 +66,14 @@ namespace Threading.CrossProcess
         /// </summary>
         public void ExitReadLock()
         {
-            if (!myIsReadLockEntered.HasValue || myIsReadLockEntered.Value == false)
-            {
-                throw new InvalidOperationException();
-            }
-
             if (!myReadOperation.WaitOne(myTimeout))
             {
                 return;
+            }
+
+            if (myIsReadLockCount < 1)
+            {
+                throw new InvalidOperationException();
             }
 
             // Local variable is necessary, because of compiler optimalization
@@ -92,8 +83,8 @@ namespace Threading.CrossProcess
                 myWriteOperation.Release();
             }
 
+            myIsReadLockCount--;
             myReadOperation.Release();
-            myIsReadLockEntered = false;
         }
 
         /// <summary>
@@ -114,7 +105,7 @@ namespace Threading.CrossProcess
 
             myIsWriteLockEntered = true;
 
-            return myIsWriteLockEntered.Value;
+            return myIsWriteLockEntered;
         }
 
         /// <summary>
@@ -122,7 +113,7 @@ namespace Threading.CrossProcess
         /// </summary>
         public void ExitWriteLock()
         {
-            if (!myIsWriteLockEntered.HasValue || myIsWriteLockEntered.Value == false)
+            if (!myIsWriteLockEntered)
             {
                 throw new InvalidOperationException();
             }
@@ -174,12 +165,12 @@ namespace Threading.CrossProcess
         /// <summary>
         /// Reader entering flag to ensure one enter per exit.
         /// </summary>
-        private bool? myIsReadLockEntered = null;
+        private int myIsReadLockCount = 0;
 
         /// <summary>
         /// Writer entering flag to ensure one enter per exit.
         /// </summary>
-        private bool? myIsWriteLockEntered = null;
+        private bool myIsWriteLockEntered = false;
 
         /// <summary>
         /// Checks synchronization object name validity.
