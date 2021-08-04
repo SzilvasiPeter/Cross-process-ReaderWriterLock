@@ -6,14 +6,14 @@ namespace Threading.CrossProcess
     /// <summary>
     /// Counter to track the number of processes or threads that can read access to the repository.
     /// </summary>
-    internal class ReaderCounter
+    public class ReaderCounter : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="InterProcessReadCounter"/> class.
         /// </summary>
         /// <param name="name">The synchronization object name. The name is case-sensitive.</param
         /// <param name="maxConcurrentRead">The maximum number of reader requests that can be granted concurrently.</param>
-        internal ReaderCounter(string name, int maxConcurrentRead)
+        public ReaderCounter(string name, int maxConcurrentRead)
         {
             MaximumCount = maxConcurrentRead + InitialCount;
             myReadCounterSemaphore = new Semaphore(InitialCount, MaximumCount, name);
@@ -24,7 +24,7 @@ namespace Threading.CrossProcess
         /// Increases the read counter by 1 across processes.
         /// </summary>
         /// <returns></returns>
-        internal int Increase()
+        public int Increase()
         {
             int counter = RetrieveCurrentCount();
 
@@ -45,7 +45,7 @@ namespace Threading.CrossProcess
         /// Decreases the read counter by 1 across processes.
         /// </summary>
         /// <returns></returns>
-        internal int Decrease()
+        public int Decrease()
         {
             int counter = RetrieveCurrentCount() - 1;
             myReadCounterSemaphore.WaitOne(0);
@@ -67,7 +67,7 @@ namespace Threading.CrossProcess
         /// <summary>
         /// Maximum number of concurrent read count.
         /// </summary>
-        internal int MaximumCount { get; private set; }
+        public int MaximumCount { get; private set; }
 
         /// <summary>
         /// Initial count in order to safely exceed or deceed semaphore.
